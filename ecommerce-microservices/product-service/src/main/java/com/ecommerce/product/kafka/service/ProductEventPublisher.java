@@ -1,11 +1,13 @@
 package com.ecommerce.product.kafka.service;
 
+import com.ecommerce.product.config.KafkaCondition;
 import com.ecommerce.product.kafka.event.ProductEvent;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Conditional(KafkaCondition.class)
 public class ProductEventPublisher {
 
     private final KafkaTemplate<String, ProductEvent> kafkaTemplate;
