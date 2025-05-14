@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: healthcare-soa
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS}
+    producer:
+      acks: all
+      retries: 3
+    consumer:
+      auto-offset-reset: earliest
+      group-id: healthcare-group
+    
+server:
+  port: ${PORT:8080}
+  tomcat:
+    max-threads: 200
+    
+mulesoft:
+  anypoint:
+    url: ${MULESOFT_URL}
+    username: ${MULESOFT_USERNAME}
+    password: ${MULESOFT_PASSWORD}
+    
+logging:
+  level:
+    root: WARN
+    org.springframework.web: INFO
+    com.healthcare: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: healthcare-soa
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS}
+    
+server:
+  port: ${PORT:8080}
+
+mulesoft:
+  anypoint:
+    url: ${MULESOFT_URL}
+    username: ${MULESOFT_USERNAME}
+    password: ${MULESOFT_PASSWORD}
+    
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    com.healthcare: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized

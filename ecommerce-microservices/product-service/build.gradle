@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.1.0'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.sonarqube' version '3.5.0.2730'
+    id 'jacoco'
+}
+
+group = 'com.ecommerce'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Spring Cloud
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.0.0'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config:4.0.1'
+    
+    // Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+    
+    // Database
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+    
+    // Observability
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
+    }
+}
+
+// Task to print current version - useful for CI/CD
+task printVersion {
+    doLast {
+        println "${project.version}"
+    }
+}
