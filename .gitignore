@@ -63,3 +63,7 @@ application-local.properties
 *.tmp
 *.bak
 *.swp
+
+.terraform/
+.terraform.*
+terraform.tfstate*

@@ -109,7 +109,7 @@ variable "kafka_broker_count" {
 variable "postgres_version" {
   description = "PostgreSQL version"
   type        = string
-  default     = "13.7"
+  default     = "15.3"
 }
 
 variable "postgres_instance_class" {
