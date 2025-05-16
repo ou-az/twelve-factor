@@ -1,30 +1,45 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
+    lazy-initialization: false
+    # Specify which components to load for better control over bean loading order
+    banner-mode: off
   datasource:
-    url: jdbc:h2:mem:product_db
-    username: sa
-    password: 
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://db:5432/product_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
   kafka:
-    # Set to true to connect to the existing Kafka container
     enabled: true
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: kafka:9092
+    topics:
+      product-created: product-created
+      product-updated: product-updated
+      product-deleted: product-deleted
+      inventory-updated: inventory-updated
+      product-events: product-events
+      product-analytics: product-analytics
     producer:
+      client-id: product-service-producer
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.trusted.packages: com.ecommerce.product.event,com.ecommerce.product.kafka.event
+        spring.json.type.mapping: product-event:com.ecommerce.product.event.ProductEvent,enhanced-event:com.ecommerce.product.kafka.event.EnhancedProductEvent
       acks: all
       retries: 3
       batch-size: 16384
+      buffer-memory: 33554432
       linger-ms: 10
       compression-type: snappy
     consumer:
@@ -34,7 +49,6 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: com.ecommerce.product.kafka.event,com.ecommerce.product.event
-    # Empty the spring.kafka.topics section as we're moving them to kafka.topics
 
 # Kafka topics configuration to match KafkaConfig class expectations
 kafka:
@@ -47,12 +61,13 @@ kafka:
     product-analytics: product-analytics
 
 server:
-  port: 8081
+  port: 8080
 
 logging:
   level:
     com.ecommerce.product: DEBUG
     org.springframework: INFO
+    org.hibernate.SQL: DEBUG
 
 # Application feature configuration for enhanced streaming capabilities
 application:
@@ -68,6 +83,10 @@ application:
 
 # Enable Micrometer metrics for Kafka monitoring
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
   metrics:
     export:
       prometheus:

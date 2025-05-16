@@ -1,40 +1,36 @@
-FROM eclipse-temurin:17-jdk-alpine as build
-WORKDIR /workspace/app
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+WORKDIR /app
 
-# Copy gradle configuration
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
+# Copy the pom.xml file first for better caching
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Make gradlew executable
-RUN chmod +x gradlew
-
-# Copy source code
-COPY src src
+# Copy the source code
+COPY src ./src
 
 # Build the application
-RUN ./gradlew build -x test
-RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
+RUN mvn package -DskipTests
 
-# Create a minimal image for running the application
-FROM eclipse-temurin:17-jre-alpine
-VOLUME /tmp
+# Create a slim final image
+FROM eclipse-temurin:17-jre
+WORKDIR /app
 
-ARG DEPENDENCY=/workspace/app/build/dependency
-COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
-COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
-COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
-
-# Set environment variables from the Kubernetes/ECS configuration
+# Set Spring profile as an environment variable (can be overridden)
 ENV SPRING_PROFILES_ACTIVE=prod
-ENV SERVER_PORT=8080
 
-# Expose the application port
+# Create a non-root user to run the application
+RUN addgroup --system javauser && adduser --system --ingroup javauser javauser
+USER javauser
+
+# Copy the built artifact from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Set the entrypoint to run the application with memory settings
+ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-jar", "app.jar"]
+
+# Expose port 8080
 EXPOSE 8080
 
-# Set the entry point
-ENTRYPOINT ["java","-cp","app:app/lib/*","com.ecommerce.product.ProductServiceApplication"]
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -q --spider http://localhost:8080/actuator/health || exit 1
+# Add health check
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD wget -q --spider http://localhost:8080/actuator/health || exit 1

@@ -18,6 +18,7 @@ import java.util.Map;
 
 @Configuration
 @Conditional(KafkaCondition.class)
+@org.springframework.context.annotation.Profile("!dev,!postgres")
 public class KafkaProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
@@ -41,8 +42,8 @@ public class KafkaProducerConfig {
     @Value("${spring.kafka.producer.compression-type}")
     private String compressionType;
 
-    @Bean
-    public Map<String, Object> producerConfigs() {
+    @Bean("enhancedProducerConfigs")
+    public Map<String, Object> enhancedProducerConfigs() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -59,13 +60,13 @@ public class KafkaProducerConfig {
         return props;
     }
 
-    @Bean
-    public ProducerFactory<String, ProductEvent> producerFactory() {
-        return new DefaultKafkaProducerFactory<>(producerConfigs());
+    @Bean("enhancedProducerFactory")
+    public ProducerFactory<String, ProductEvent> enhancedProducerFactory() {
+        return new DefaultKafkaProducerFactory<>(enhancedProducerConfigs());
     }
 
-    @Bean
-    public KafkaTemplate<String, ProductEvent> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+    @Bean("extendedKafkaTemplate")
+    public KafkaTemplate<String, ProductEvent> extendedKafkaTemplate() {
+        return new KafkaTemplate<>(enhancedProducerFactory());
     }
 }

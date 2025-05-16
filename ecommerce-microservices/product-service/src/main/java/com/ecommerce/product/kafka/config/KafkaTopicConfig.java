@@ -15,6 +15,7 @@ import java.util.Map;
 
 @Configuration
 @Conditional(KafkaCondition.class)
+@org.springframework.context.annotation.Profile("!postgres")
 public class KafkaTopicConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
