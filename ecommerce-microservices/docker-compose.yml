@@ -1,25 +1,28 @@
+# Consolidated Docker Compose for Ecommerce Microservices Platform
+# Enhanced version with health checks and proper service dependencies
+
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:13
-    container_name: product-db
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: ecommerce-zookeeper
     ports:
-      - "5432:5432"
+      - "2181:2181"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=product_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     networks:
       - ecommerce-network
+    healthcheck:
+      test: echo stat | nc localhost 2181
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka:
     image: confluentinc/cp-kafka:7.3.0
-    container_name: kafka
-    depends_on:
-      - zookeeper
+    container_name: ecommerce-kafka
     ports:
       - "9092:9092"
       - "29092:29092"
@@ -30,34 +33,90 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    networks:
-      - ecommerce-network
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.0
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - ecommerce-network
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    ports:
-      - "8090:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     depends_on:
-      - kafka
       - zookeeper
     networks:
       - ecommerce-network
+    healthcheck:
+      test: kafka-topics --bootstrap-server localhost:9092 --list
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecommerce-kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - ecommerce-network
+
+  postgres:
+    image: postgres:13
+    container_name: ecommerce-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=product_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: ecommerce-product-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/product_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_KAFKA_ENABLED=true
+      # Kafka configuration
+      - SPRING_KAFKA_BOOTSTRAP-SERVERS=kafka:9092
+      - SPRING_KAFKA_PRODUCER_CLIENT-ID=product-service-producer
+      - SPRING_KAFKA_PRODUCER_ACKS=all
+      - SPRING_KAFKA_PRODUCER_RETRIES=3
+      - SPRING_KAFKA_PRODUCER_BATCH-SIZE=16384
+      - SPRING_KAFKA_PRODUCER_BUFFER-MEMORY=33554432
+      - SPRING_KAFKA_PRODUCER_COMPRESSION-TYPE=snappy
+      - SPRING_KAFKA_TOPICS_PRODUCT-CREATED=product-created
+      - SPRING_KAFKA_TOPICS_PRODUCT-UPDATED=product-updated
+      - SPRING_KAFKA_TOPICS_PRODUCT-DELETED=product-deleted
+      - SPRING_KAFKA_TOPICS_INVENTORY-UPDATED=inventory-updated
+      - SPRING_KAFKA_TOPICS_PRODUCT-EVENTS=product-events
+      - SPRING_KAFKA_TOPICS_PRODUCT-ANALYTICS=product-analytics
+    networks:
+      - ecommerce-network
+
+  # Additional microservices can be added here
+  # Example:
+  # order-service:
+  #   build: ./order-service
+  #   ...
 
 volumes:
   postgres_data:

@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ecommerce
+
+resources:
+  - 00-namespace.yaml
+  - 01-configmap.yaml
+  - 02-secrets.yaml
+  - 03-postgres-pvc.yaml
+  - 04-postgres-deployment.yaml
+  - 05-postgres-service.yaml
+  - 06-zookeeper-deployment.yaml
+  - 07-zookeeper-service.yaml
+  - 08-kafka-deployment.yaml
+  - 09-kafka-service.yaml
+  - 10-kafka-ui-deployment.yaml
+  - 11-kafka-ui-service.yaml
+  - 12-product-service-deployment.yaml
+  - 13-product-service-service.yaml
+  - 14-ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: ecommerce-platform
+  app.kubernetes.io/managed-by: kustomize
+
+commonAnnotations:
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/created-by: "twelve-factor-demo"
