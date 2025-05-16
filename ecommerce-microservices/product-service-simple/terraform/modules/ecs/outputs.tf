@@ -37,3 +37,13 @@ output "cloudwatch_log_group_name" {
   description = "Name of the CloudWatch log group"
   value       = aws_cloudwatch_log_group.app.name
 }
+
+output "execution_role_arn" {
+  description = "ARN of the ECS task execution role"
+  value       = aws_iam_role.task_execution_role.arn
+}
+
+output "task_role_arn" {
+  description = "ARN of the ECS task role"
+  value       = aws_iam_role.task_role.arn
+}
