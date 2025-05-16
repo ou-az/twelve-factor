@@ -349,6 +349,57 @@ curl -X GET http://$SERVICE_IP/api/v1/products
 ```
 
 
+## Stopping and Cleaning Kubernetes Resources
+
+When you're done working with your Kubernetes environment, you can clean up resources and stop components using several methods.
+
+### Option 1: Delete the Entire Namespace
+
+The quickest way to remove all resources from your deployment is to delete the namespace:
+
+```powershell
+# This removes all resources in the ecommerce namespace
+kubectl delete namespace ecommerce
+```
+
+You'll see confirmation: `namespace "ecommerce" deleted`
+
+### Option 2: Scale Down Individual Deployments
+
+To temporarily stop specific components without removing their configurations:
+
+```powershell
+# Scale deployments to zero replicas
+kubectl scale deployment product-service -n ecommerce --replicas=0
+kubectl scale deployment postgres -n ecommerce --replicas=0
+kubectl scale deployment kafka -n ecommerce --replicas=0
+kubectl scale deployment zookeeper -n ecommerce --replicas=0
+kubectl scale deployment kafka-ui -n ecommerce --replicas=0
+```
+
+This approach keeps all configurations intact, making it easy to scale back up later.
+
+### Option 3: Disable Kubernetes in Docker Desktop
+
+To completely stop Kubernetes while keeping Docker running:
+
+1. Open Docker Desktop
+2. Click the gear icon (⚙️) in the top right to open Settings
+3. In the left sidebar, select "Kubernetes"
+4. Uncheck the option "Enable Kubernetes"
+5. Click "Apply & Restart"
+
+This will free up system resources while keeping Docker available.
+
+### Option 4: Shut Down Docker Desktop Completely
+
+For maximum resource recovery:
+
+1. Right-click the Docker icon in your system tray
+2. Select "Quit Docker Desktop"
+
+This will stop both Docker and Kubernetes completely.
+
 ## Kubernetes Deployment for Production
 
 For production deployment to a managed Kubernetes service like AKS, EKS, or GKE:
