@@ -1,0 +1,54 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: aws-load-balancer-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: kube-system/aws-load-balancer-serving-cert
+  labels:
+    app.kubernetes.io/name: aws-load-balancer-controller
+webhooks:
+  - name: validate.ingress.alb.k8s.aws
+    matchPolicy: Equivalent
+    rules:
+      - apiGroups:
+          - extensions
+          - networking.k8s.io
+        apiVersions:
+          - v1beta1
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - ingresses
+    failurePolicy: Fail
+    sideEffects: None
+    clientConfig:
+      service:
+        name: aws-load-balancer-webhook-service
+        namespace: kube-system
+        path: /validate-networking-v1-ingress
+    admissionReviewVersions:
+      - v1beta1
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: aws-load-balancer-serving-cert
+  namespace: kube-system
+spec:
+  dnsNames:
+    - aws-load-balancer-webhook-service.kube-system.svc
+    - aws-load-balancer-webhook-service.kube-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: aws-load-balancer-selfsigned-issuer
+  secretName: aws-load-balancer-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: aws-load-balancer-selfsigned-issuer
+  namespace: kube-system
+spec:
+  selfSigned: {}

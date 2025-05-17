@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service-minimal
+  namespace: ecommerce
+  labels:
+    app: product-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+      - name: product-service
+        image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/ecommerce-product-service:latest
+        env:
+        # Core Spring Boot configuration
+        - name: SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING
+          value: "true"
+        - name: SPRING_MAIN_ALLOW_CIRCULAR_REFERENCES
+          value: "true"
+          
+        # Explicit JPA configuration
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "update"
+        - name: SPRING_JPA_GENERATE_DDL
+          value: "true"
+        - name: SPRING_JPA_DATABASE_PLATFORM
+          value: "org.hibernate.dialect.PostgreSQLDialect"
+        
+        # Database connection
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-service:5432/product_db"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "YOUR_DB_PASSWORD"
+        - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+          value: "org.postgresql.Driver"
+          
+        # Disable Kafka
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-service:9092"
+        
+        # Debug logging
+        - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK
+          value: "DEBUG"
+        - name: LOGGING_LEVEL_COM_ECOMMERCE
+          value: "DEBUG"
+        
+        envFrom:
+        - configMapRef:
+            name: product-service-debug-config
+        ports:
+        - containerPort: 8080

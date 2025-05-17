@@ -72,6 +72,15 @@ module "kafka_ui_ecr" {
   tags                  = var.tags
 }
 
+module "postgres_ecr" {
+  source = "../../modules/ecr"
+
+  repository_name       = "${var.project_name}-postgres"
+  enable_lifecycle_policy = true
+  max_image_count       = 10
+  tags                  = var.tags
+}
+
 # EKS Cluster
 module "eks" {
   source = "../../modules/eks"
@@ -96,12 +105,7 @@ data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_name
 }
 
-# Configure Kubernetes provider
-provider "kubernetes" {
-  host                   = module.eks.endpoint
-  cluster_ca_certificate = base64decode(module.eks.kubeconfig-certificate-authority-data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-}
+# Kubernetes provider configuration moved to providers.tf
 
 # Create the ecommerce namespace
 resource "kubernetes_namespace" "ecommerce" {
@@ -166,6 +170,8 @@ resource "kubernetes_storage_class" "ebs_storage" {
     type = "gp3"
     fsType = "ext4"
   }
+  
+  depends_on = [module.eks, kubernetes_namespace.ecommerce]
 }
 
 # Create PVC for PostgreSQL
@@ -185,6 +191,13 @@ resource "kubernetes_persistent_volume_claim" "postgres_pvc" {
       }
     }
   }
+  
+  wait_until_bound = false
+  
+  depends_on = [
+    kubernetes_storage_class.ebs_storage,
+    kubernetes_namespace.ecommerce
+  ]
 }
 
 # Output the EKS cluster details
@@ -219,7 +232,22 @@ output "kafka_ui_ecr_repository_url" {
   value       = module.kafka_ui_ecr.repository_url
 }
 
+output "postgres_ecr_repository_url" {
+  description = "ECR Repository URL for PostgreSQL"
+  value       = module.postgres_ecr.repository_url
+}
+
 output "kubernetes_config_command" {
   description = "Command to configure kubectl for EKS cluster"
   value       = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --region ${var.aws_region}"
+}
+
+output "aws_region" {
+  description = "AWS region used for the deployment"
+  value       = var.aws_region
+}
+
+output "vpc_id" {
+  description = "VPC ID for the EKS cluster"
+  value       = module.vpc.vpc_id
 }

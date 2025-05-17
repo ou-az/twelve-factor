@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-load-balancer-controller
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: aws-load-balancer-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aws-load-balancer-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aws-load-balancer-controller
+    spec:
+      containers:
+      - name: controller
+        image: amazon/aws-alb-ingress-controller:v2.4.4
+        args:
+        - --cluster-name=ecommerce-eks-cluster
+        - --ingress-class=alb
+        - --aws-region=us-west-2
+        - --disable-webhook=true
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      serviceAccountName: aws-load-balancer-controller

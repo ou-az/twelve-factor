@@ -86,7 +86,7 @@ variable "db_password" {
   description = "Password for PostgreSQL database"
   type        = string
   sensitive   = true
-  default     = "db_password_to_be_changed" # Use AWS Secrets Manager in production
+  default     = "YOUR_DB_PASSWORD" # Use AWS Secrets Manager in production
 }
 
 variable "tags" {

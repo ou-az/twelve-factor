@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-hibernate-config
+  namespace: ecommerce
+data:
+  SPRING_JPA_HIBERNATE_DDL-AUTO: "update"
+  SPRING_JPA_GENERATE-DDL: "true"
+  SPRING_JPA_DATABASE-PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
+  SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+  SPRING_JPA_SHOW-SQL: "true"
+  SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_BATCH_SIZE: "10"
+  LOGGING_LEVEL_ORG_HIBERNATE_SQL: "DEBUG"
+  LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASIC_BINDER: "TRACE"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: ecommerce
+spec:
+  template:
+    spec:
+      containers:
+      - name: product-service
+        envFrom:
+        - configMapRef:
+            name: product-service-hibernate-config

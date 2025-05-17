@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-config
+  namespace: ecommerce
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  SPRING_KAFKA_BOOTSTRAP-SERVERS: "kafka-service:9092"
+  SPRING_KAFKA_ENABLED: "true"
+  SPRING_KAFKA_PRODUCER_CLIENT-ID: "product-service-producer"
+  KAFKA_PRODUCT_CREATED_TOPIC: "product-created"
+  KAFKA_PRODUCT_UPDATED_TOPIC: "product-updated"
+  KAFKA_PRODUCT_DELETED_TOPIC: "product-deleted"
+  KAFKA_INVENTORY_UPDATED_TOPIC: "inventory-updated"
+  SPRING_MAIN_ALLOW-BEAN-DEFINITION-OVERRIDING: "true"

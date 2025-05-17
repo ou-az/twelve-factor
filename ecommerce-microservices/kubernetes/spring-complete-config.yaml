@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-complete-config
+  namespace: ecommerce
+data:
+  # Spring core settings
+  SPRING_MAIN_ALLOW-BEAN-DEFINITION-OVERRIDING: "true"
+  SPRING_MAIN_ALLOW-CIRCULAR-REFERENCES: "true"
+  
+  # JPA Configuration
+  SPRING_JPA_HIBERNATE_DDL-AUTO: "update"
+  SPRING_JPA_GENERATE-DDL: "true"
+  SPRING_JPA_DATABASE-PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
+  SPRING_JPA_SHOW-SQL: "true"
+  
+  # Disable Flyway
+  SPRING_FLYWAY_ENABLED: "false"
+  
+  # Datasource configuration
+  SPRING_DATASOURCE_DRIVER-CLASS-NAME: "org.postgresql.Driver"
+  SPRING_DATASOURCE_TYPE: "com.zaxxer.hikari.HikariDataSource"
+  
+  # HikariCP configuration
+  SPRING_DATASOURCE_HIKARI_MINIMUM-IDLE: "2"
+  SPRING_DATASOURCE_HIKARI_MAXIMUM-POOL-SIZE: "10"
+  SPRING_DATASOURCE_HIKARI_IDLE-TIMEOUT: "30000"
+  SPRING_DATASOURCE_HIKARI_POOL-NAME: "SpringBootHikariCP"
+  SPRING_DATASOURCE_HIKARI_MAX-LIFETIME: "2000000"
+  SPRING_DATASOURCE_HIKARI_CONNECTION-TIMEOUT: "30000"
+  
+  # Kafka configuration
+  SPRING_KAFKA_BOOTSTRAP-SERVERS: "kafka-service:9092"
+  SPRING_KAFKA_CONSUMER_AUTO-OFFSET-RESET: "earliest"
+  SPRING_KAFKA_CONSUMER_GROUP-ID: "product-service-group"
+  SPRING_KAFKA_CONSUMER_KEY-DESERIALIZER: "org.apache.kafka.common.serialization.StringDeserializer"
+  SPRING_KAFKA_CONSUMER_VALUE-DESERIALIZER: "org.apache.kafka.common.serialization.StringDeserializer"
+  SPRING_KAFKA_PRODUCER_KEY-SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+  SPRING_KAFKA_PRODUCER_VALUE-SERIALIZER: "org.apache.kafka.common.serialization.StringSerializer"
+
+  # Explicit Kafka topic configuration
+  KAFKA_TOPIC_PRODUCT_CREATED: "product-created"
+  KAFKA_TOPIC_PRODUCT_UPDATED: "product-updated"
+  KAFKA_TOPIC_PRODUCT_DELETED: "product-deleted"
+  
+  # Actuator configuration
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW-DETAILS: "always"

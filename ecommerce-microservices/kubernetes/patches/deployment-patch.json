@@ -1,0 +1,20 @@
+{
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "name": "product-service",
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "product-service-hibernate-config"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

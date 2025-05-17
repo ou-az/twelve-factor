@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-debug-config
+  namespace: ecommerce
+data:
+  # Debug logging for Spring internals
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: "DEBUG"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_BEANS: "TRACE"
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CONTEXT: "DEBUG"
+  
+  # Application specific logging
+  LOGGING_LEVEL_COM_ECOMMERCE: "DEBUG"
+  
+  # Debug hibernate and datasource
+  LOGGING_LEVEL_ORG_HIBERNATE: "DEBUG"
+  LOGGING_LEVEL_COM_ZAXXER_HIKARI: "DEBUG"
+  
+  # Simplified Kafka configuration
+  SPRING_KAFKA_ENABLED: "false"
+  SPRING_KAFKA_BOOTSTRAP-SERVERS: "kafka-service:9092"

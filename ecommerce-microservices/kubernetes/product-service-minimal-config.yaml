@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-minimal-config
+  namespace: ecommerce
+data:
+  application.yml: |
+    spring:
+      application:
+        name: product-service
+      profiles:
+        active: postgres
+      datasource:
+        url: jdbc:postgresql://postgres-fixed:5432/productdb
+        username: postgres
+        password: YOUR_DB_PASSWORD
+        driver-class-name: org.postgresql.Driver
+        hikari:
+          maximum-pool-size: 5
+      jpa:
+        hibernate:
+          ddl-auto: update
+        properties:
+          hibernate:
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+        show-sql: true
+      kafka:
+        enabled: false
+    
+    server:
+      port: 8081
+      
+    logging:
+      level:
+        com.ecommerce.product: DEBUG
+        org.springframework: INFO
