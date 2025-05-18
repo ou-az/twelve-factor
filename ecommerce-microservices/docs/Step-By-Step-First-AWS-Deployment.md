@@ -158,7 +158,7 @@ if [ -z "$OSTYPE" ] || [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwi
   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
   # Build and push the Spring Boot application image
-  cd /workspaces/interview/twelve-factor/ecommerce-microservices/product-service
+  cd <SOURCE_DIR>/twelve-factor/ecommerce-microservices/product-service
   ./mvnw clean package -DskipTests
   docker build -t ecommerce-product-service:latest .
   docker tag ecommerce-product-service:latest $PRODUCT_ECR:latest
