@@ -1,0 +1,145 @@
+services:
+  esb:
+    image: vromero/mule:3.8.0
+    container_name: healthcare-esb
+    ports:
+      - "8081:8081"  # HTTP
+      - "5000:5000"  # JMX
+    volumes:
+      - ./esb/apps/healthcare-integration-app:/opt/mule/apps/healthcare-integration-app
+      - ./esb/domains/default:/opt/mule/domains/default
+    environment:
+      - MULE_ENV=local
+    networks:
+      - healthcare-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:13
+    container_name: healthcare-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_MULTIPLE_DATABASES=healthcare_patient,healthcare_appointment
+    volumes:
+      - ./init-scripts:/docker-entrypoint-initdb.d
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - healthcare-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:5.0
+    container_name: healthcare-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - healthcare-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:6.2
+    container_name: healthcare-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - healthcare-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      
+  patient-service:
+    build:
+      context: ./services/patient-service
+      dockerfile: Dockerfile
+    container_name: healthcare-patient-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      esb:
+        condition: service_started
+    ports:
+      - "8091:8091"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/healthcare_patient
+      - SPRING_DATASOURCE_USERNAME=healthcare_user
+      - SPRING_DATASOURCE_PASSWORD=healthcare_password
+      - MULE_ESB_URL=http://esb:8081
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_HEALTHCARE=DEBUG
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK=INFO
+    networks:
+      - healthcare-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8091/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  appointment-service:
+    build:
+      context: ./services/appointment-service
+      dockerfile: Dockerfile
+    container_name: healthcare-appointment-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      esb:
+        condition: service_started
+    ports:
+      - "8092:8092"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/healthcare_appointment
+      - SPRING_DATASOURCE_USERNAME=healthcare_user
+      - SPRING_DATASOURCE_PASSWORD=healthcare_password
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/healthcare_appointment
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - MULE_ESB_URL=http://esb:8081
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_HEALTHCARE=DEBUG
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK=INFO
+    networks:
+      - healthcare-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8092/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+volumes:
+  postgres-data:
+    driver: local
+  mongo-data:
+    driver: local
+
+networks:
+  healthcare-network:
+    driver: bridge
+
+
