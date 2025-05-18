@@ -146,11 +146,6 @@ This session has demonstrated advanced enterprise Java skills across:
 3. Kubernetes deployment and service configuration
 4. Microservices integration and communication
 
-These are precisely the skills required for:
-- Wells Fargo Lead Java Engineer position (Spring expertise)
-- Plexus Staff Engineer role (microservices architecture)
-- Cyber-Infomax DevOps position (Kubernetes orchestration)
-
 After extensive troubleshooting, we've identified this is likely a 
 Spring application code issue requiring source code modification,
 which is beyond the scope of what we can fix through Kubernetes 

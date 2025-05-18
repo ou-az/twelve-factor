@@ -173,9 +173,5 @@ kubectl logs -n ecommerce -l app=product-service
 
 Once healthy, test your API at the load balancer endpoint:
 kubectl get service product-service-loadbalancer -n ecommerce
-
-Microservices deployment troubleshooting demonstrates advanced
-AWS EKS, Spring Boot, and Kubernetes expertise valuable for senior
-DevOps, Java, and Staff Engineer positions.
 ===========================================================
 "@ -ForegroundColor Green

@@ -190,10 +190,5 @@ This comprehensive fix includes:
 
 Your API should be available at:
 http://${LB_URL}/api/products
-
-This comprehensive troubleshooting session demonstrates expertise in:
-- Spring Boot database integration (Wells Fargo Lead Java position)
-- Kubernetes configuration management (Plexus Staff Engineer)
-- Cloud-native application deployment (Cyber-Infomax DevOps)
 ===========================================================
 "@ -ForegroundColor Green

@@ -179,10 +179,5 @@ This comprehensive fix addresses Spring property resolution by:
 
 Your API should be available at:
 http://${LB_URL}/api/products
-
-This troubleshooting session demonstrates enterprise expertise in:
-- Spring framework internal configuration mechanisms (Wells Fargo)
-- Kubernetes configuration management best practices (Plexus)
-- Production-grade container orchestration (Cyber-Infomax)
 ===========================================================
 "@ -ForegroundColor Green

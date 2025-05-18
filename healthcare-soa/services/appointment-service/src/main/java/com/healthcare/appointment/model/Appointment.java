@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 /**
  * Entity representing the Appointment table.
  * 
- * In enterprise environments like Wells Fargo or healthcare companies, database schemas
+ * In enterprise environments like banks or healthcare companies, database schemas
  * are often strictly controlled. This implementation is designed to work with the
  * existing schema constraints where the application user doesn't have schema modification
  * privileges.
