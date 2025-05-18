@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: patient-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/healthcare_patient}
+    username: ${SPRING_DATASOURCE_USERNAME:healthcare_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:healthcare_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+      # Enterprise-grade configuration for working with existing schemas
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    properties:
+      hibernate:
+        jdbc.lob.non_contextual_creation: true
+        format_sql: true
+        globally_quoted_identifiers: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+server:
+  port: ${SERVER_PORT:8091}
+  servlet:
+    context-path: /
+
+# Spring Boot Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+
+# Springdoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Custom application properties
+app:
+  mule-esb-url: ${MULE_ESB_URL:http://localhost:8081}

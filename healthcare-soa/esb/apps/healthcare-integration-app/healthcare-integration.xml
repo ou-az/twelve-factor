@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:json="http://www.mulesoft.org/schema/mule/json"
+      xsi:schemaLocation="
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.8/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/3.8/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/3.8/mule-json.xsd">
+
+    <!-- Global Configuration -->
+    <configuration doc:name="Configuration">
+        <expression-language>
+            <global-functions>
+                def isPatientResource(path) {
+                    return path.startsWith('/api/patients');
+                }
+                
+                def isAppointmentResource(path) {
+                    return path.startsWith('/api/appointments');
+                }
+                
+                def extractId(path) {
+                    String[] parts = path.split("/");
+                    if (parts.length >= 4) {
+                        return parts[3];
+                    }
+                    return null;
+                }
+            </global-functions>
+        </expression-language>
+    </configuration>
+    
+    <!-- HTTP Listener Configuration -->
+    <http:listener-config name="API_Gateway_Config" host="0.0.0.0" port="8081" doc:name="API Gateway HTTP Listener Configuration"/>
+    
+    <!-- Service Connectors -->
+    <http:request-config name="Patient_Service_Config" host="patient-service" port="8091" doc:name="Patient Service HTTP Connector"/>
+    <http:request-config name="Appointment_Service_Config" host="appointment-service" port="8092" doc:name="Appointment Service HTTP Connector"/>
+    
+    <!-- API Gateway Flow -->
+    <flow name="api-gateway-flow">
+        <http:listener config-ref="API_Gateway_Config" path="/api/*" doc:name="API Gateway Listener"/>
+        
+        <!-- Request Logging -->
+        <logger message="Request received: #[message.inboundProperties.'http.method'] #[message.inboundProperties.'http.request.path']" level="INFO" doc:name="Log Request"/>
+        
+        <!-- Content-Based Routing -->
+        <choice doc:name="Route Based on Resource Type">
+            <when expression="#[isPatientResource(message.inboundProperties.'http.request.path')]">
+                <flow-ref name="route-to-patient-service" doc:name="Route to Patient Service"/>
+            </when>
+            <when expression="#[isAppointmentResource(message.inboundProperties.'http.request.path')]">
+                <flow-ref name="route-to-appointment-service" doc:name="Route to Appointment Service"/>
+            </when>
+            <otherwise>
+                <set-payload value="{'error': 'Unsupported resource type'}" doc:name="Unsupported Resource Type"/>
+                <set-property propertyName="Content-Type" value="application/json" doc:name="Set Response Content-Type"/>
+                <set-property propertyName="http.status" value="404" doc:name="HTTP Status 404"/>
+            </otherwise>
+        </choice>
+        
+        <!-- Response Logging -->
+        <logger message="Response: #[message.outboundProperties.'http.status'] for #[message.inboundProperties.'http.request.path']" level="INFO" doc:name="Log Response"/>
+    </flow>
+    
+    <!-- Patient Service Routing -->
+    <flow name="route-to-patient-service">
+        <http:request config-ref="Patient_Service_Config" method="#[message.inboundProperties.'http.method']" path="#[message.inboundProperties.'http.request.path'.substring(4)]" doc:name="Patient Service Request">
+            <http:request-builder>
+                <http:query-params expression="#[message.inboundProperties.'http.query.params']"/>
+                <http:headers expression="#[message.inboundProperties]"/>
+            </http:request-builder>
+        </http:request>
+    </flow>
+    
+    <!-- Appointment Service Routing -->
+    <flow name="route-to-appointment-service">
+        <http:request config-ref="Appointment_Service_Config" method="#[message.inboundProperties.'http.method']" path="#[message.inboundProperties.'http.request.path'.substring(4)]" doc:name="Appointment Service Request">
+            <http:request-builder>
+                <http:query-params expression="#[message.inboundProperties.'http.query.params']"/>
+                <http:headers expression="#[message.inboundProperties]"/>
+            </http:request-builder>
+        </http:request>
+    </flow>
+    
+    <!-- Patient-Appointment Integration Flow -->
+    <flow name="patient-appointment-integration-flow">
+        <http:listener config-ref="API_Gateway_Config" path="/api/integration/patient-appointments/:patientId" doc:name="Patient-Appointment Integration Endpoint"/>
+        
+        <!-- Filter for HTTP methods -->
+        <choice doc:name="Route Based on HTTP Method">
+            <when expression="#[message.inboundProperties.'http.method' == 'GET']">
+                <logger message="Processing GET request for patient appointments" level="INFO" doc:name="Log GET Request"/>
+                
+                <set-variable variableName="patientId" value="#[message.inboundProperties.'http.uri.params'.patientId]" doc:name="Extract Patient ID"/>
+                
+                <!-- Get Patient Details -->
+                <http:request config-ref="Patient_Service_Config" method="GET" path="/api/patients/#[flowVars.patientId]" doc:name="Get Patient Details">
+                    <http:request-builder>
+                        <http:headers expression="#[message.inboundProperties]"/>
+                    </http:request-builder>
+                </http:request>
+                
+                <set-variable variableName="patientDetails" value="#[payload]" doc:name="Store Patient Details"/>
+                
+                <!-- Get Patient Appointments -->
+                <http:request config-ref="Appointment_Service_Config" method="GET" path="/api/appointments/patient/#[flowVars.patientId]" doc:name="Get Patient Appointments">
+                    <http:request-builder>
+                        <http:headers expression="#[message.inboundProperties]"/>
+                    </http:request-builder>
+                </http:request>
+                
+                <set-variable variableName="appointments" value="#[payload]" doc:name="Store Appointments"/>
+                
+                <!-- Combine Patient Details and Appointments -->
+                <set-payload value="#[{'patient': flowVars.patientDetails, 'appointments': flowVars.appointments}]" doc:name="Combine Results"/>
+                <set-property propertyName="Content-Type" value="application/json" doc:name="Set Response Content-Type"/>
+            </when>
+            <otherwise>
+                <set-payload value="{'error': 'Method not allowed. Use GET for this endpoint.'}" doc:name="Method Not Allowed"/>
+                <set-property propertyName="Content-Type" value="application/json" doc:name="Set Response Content-Type"/>
+                <set-property propertyName="http.status" value="405" doc:name="HTTP Status 405"/>
+            </otherwise>
+        </choice>
+    </flow>
+    
+    <!-- Create Appointment with Patient Validation Flow -->
+    <flow name="create-appointment-with-validation-flow">
+        <http:listener config-ref="API_Gateway_Config" path="/api/integration/appointments/validated" doc:name="Create Appointment with Validation Endpoint"/>
+        
+        <!-- Filter for HTTP methods -->
+        <choice doc:name="Route Based on HTTP Method">
+            <when expression="#[message.inboundProperties.'http.method' == 'POST']">
+                <logger message="Processing POST request for validated appointment creation" level="INFO" doc:name="Log POST Request"/>
+                
+                <!-- Extract Patient ID from Request -->
+                <set-variable variableName="appointmentRequest" value="#[payload]" doc:name="Store Appointment Request"/>
+                <set-variable variableName="patientId" value="#[payload.patientId]" doc:name="Extract Patient ID"/>
+                
+                <!-- Validate Patient Exists -->
+                <http:request config-ref="Patient_Service_Config" method="GET" path="/api/patients/#[flowVars.patientId]" doc:name="Validate Patient Exists">
+                    <http:request-builder>
+                        <http:headers expression="#[message.inboundProperties]"/>
+                    </http:request-builder>
+                </http:request>
+                
+                <set-variable variableName="patientDetails" value="#[payload]" doc:name="Store Patient Details"/>
+                
+                <!-- Add Patient Name to Appointment -->
+                <set-payload value="#[{
+                    'patientId': flowVars.appointmentRequest.patientId,
+                    'patientName': flowVars.patientDetails.firstName + ' ' + flowVars.patientDetails.lastName,
+                    'providerId': flowVars.appointmentRequest.providerId,
+                    'providerName': flowVars.appointmentRequest.providerName,
+                    'startTime': flowVars.appointmentRequest.startTime,
+                    'endTime': flowVars.appointmentRequest.endTime,
+                    'appointmentType': flowVars.appointmentRequest.appointmentType,
+                    'status': flowVars.appointmentRequest.status,
+                    'reason': flowVars.appointmentRequest.reason
+                }]" doc:name="Enrich Appointment with Patient Name"/>
+                
+                <!-- Create Appointment -->
+                <http:request config-ref="Appointment_Service_Config" method="POST" path="/api/appointments" doc:name="Create Appointment">
+                    <http:request-builder>
+                        <http:headers expression="#[message.inboundProperties]"/>
+                    </http:request-builder>
+                </http:request>
+                
+                <set-property propertyName="Content-Type" value="application/json" doc:name="Set Response Content-Type"/>
+            </when>
+            <otherwise>
+                <set-payload value="{'error': 'Method not allowed. Use POST for this endpoint.'}" doc:name="Method Not Allowed"/>
+                <set-property propertyName="Content-Type" value="application/json" doc:name="Set Response Content-Type"/>
+                <set-property propertyName="http.status" value="405" doc:name="HTTP Status 405"/>
+            </otherwise>
+        </choice>
+    </flow>
+    
+    <!-- Health Check Flow -->
+    <flow name="health-check-flow">
+        <http:listener config-ref="API_Gateway_Config" path="/api/health" doc:name="Health Check Endpoint"/>
+        <set-payload value="{'status':'UP','timestamp':'now','components':{'esb':{'status':'UP'}}}" doc:name="Set Health Response"/>
+        <set-property propertyName="Content-Type" value="application/json" doc:name="Set Content-Type"/>
+    </flow>
+</mule>

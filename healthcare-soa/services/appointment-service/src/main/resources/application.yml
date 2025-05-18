@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: appointment-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/healthcare_appointment}
+    username: ${SPRING_DATASOURCE_USERNAME:healthcare_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:healthcare_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+      # Enterprise-grade configuration for strict database environments
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      # Skip validation for fields with @Transient annotation
+    show-sql: true
+    properties:
+      hibernate:
+        jdbc.lob.non_contextual_creation: true
+        format_sql: true
+        globally_quoted_identifiers: true
+        # Used in enterprise settings to ignore unknown columns
+        # This helps when DB schema changes lag behind application changes
+        schema_management.physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/healthcare_appointment}
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+server:
+  port: ${SERVER_PORT:8092}
+  servlet:
+    context-path: /
+    
+# Enterprise feature flag configuration and application settings
+# This demonstrates a common pattern used in large organizations
+# where database schema changes lag behind application deployment
+app:
+  features:
+    appointment-datetime-enabled: ${FEATURE_APPT_DATETIME:false}
+    department-field-enabled: ${FEATURE_DEPARTMENT:false}
+    notes-field-enabled: ${FEATURE_NOTES:true}
+  mule-esb-url: ${MULE_ESB_URL:http://localhost:8081}
+
+# Spring Boot Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    mongo:
+      enabled: true
+    redis:
+      enabled: true
+
+# Springdoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Custom application properties are now merged with feature flags above

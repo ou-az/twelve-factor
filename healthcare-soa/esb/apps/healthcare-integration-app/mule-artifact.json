@@ -1,0 +1,15 @@
+{
+  "minMuleVersion": "3.8.0",
+  "name": "healthcare-integration-app",
+  "referencesResolutionEnabled": true,
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedResources": []
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}
