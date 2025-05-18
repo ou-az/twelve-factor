@@ -4,13 +4,12 @@ This guide will help you set up and run the Healthcare Information Exchange SOA 
 
 ## Prerequisites
 
-- Java 17+
-- Maven 3.8+ or Gradle 7.5+
+- Java 8+
+- Maven 3.6+
 - Docker and Docker Compose
 - Git
-- AWS CLI (for deployment)
-- MuleSoft Anypoint Platform account
-- PostgreSQL, MongoDB, and Redis (local or containerized)
+- MuleSoft Runtime 3.8.0
+- PostgreSQL 13+, MongoDB 4.4+, and Redis 6.2+ (containerized via Docker)
 
 ## Initial Setup
 
@@ -27,24 +26,25 @@ Create a `.env` file in the project root with the following variables:
 
 ```
 # Database Configuration
-DB_HOST=localhost
+DB_HOST=postgres
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=securepassword
-PATIENT_DB_NAME=patient_db
-PROVIDER_DB_NAME=provider_db
-APPOINTMENT_DB_NAME=appointment_db
-AUTH_DB_NAME=auth_db
-AUDIT_DB_NAME=audit_db
+DB_PASSWORD=postgres123456
+DB_NAME=healthcaredb
 
-# MongoDB Configuration
-MONGO_HOST=localhost
+# Enterprise DB Adaptation Settings
+DB_USE_LEGACY_SCHEMA=true
+DB_FEATURE_FLAGS_ENABLED=true
+
+# MongoDB Configuration (Used by Appointment Service)
+MONGO_HOST=mongodb
 MONGO_PORT=27017
 MONGO_USER=mongouser
 MONGO_PASSWORD=mongopassword
+MONGO_DB_NAME=appointmentdb
 
-# Redis Configuration
-REDIS_HOST=localhost
+# Redis Configuration (Used by Appointment Service)
+REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_PASSWORD=redispassword
 
@@ -52,9 +52,8 @@ REDIS_PASSWORD=redispassword
 KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 
 # MuleSoft ESB Configuration
-MULE_CLIENT_ID=your-client-id
-MULE_CLIENT_SECRET=your-client-secret
-MULE_API_URL=https://anypoint.mulesoft.com/api
+MULE_ENV=local
+MULE_VERSION=3.8.0
 
 # Security
 JWT_SECRET=your-jwt-secret-key
@@ -73,21 +72,20 @@ The project follows a modular structure with each service in its own directory:
 
 ```
 healthcare-soa/
-├── esb/                    # MuleSoft ESB configuration
-├── patient-service/        # Patient management service
-├── provider-service/       # Provider management service
-├── appointment-service/    # Appointment scheduling service
-├── auth-service/           # Authentication service
-├── audit-service/          # Audit logging service
-├── analytics-service/      # Analytics and reporting service
-├── api-gateway/            # API Gateway configuration
-├── common/                 # Shared libraries and utilities
-├── config/                 # Configuration files
-├── deployment/             # Deployment scripts and configurations
-│   ├── docker/             # Docker configurations
-│   ├── kubernetes/         # K8s manifests
-│   └── terraform/          # Infrastructure as Code
-└── docs/                   # Project documentation
+├── esb/                           # MuleSoft ESB configuration
+│   ├── apps/                       # Mule applications
+│   │   └── healthcare-integration-app/ # Main integration application
+│   └── domains/                    # Shared domain configurations
+│       └── default/                # Default domain
+├── services/                       # Microservices
+│   ├── patient-service/            # Patient management service
+│   └── appointment-service/        # Appointment scheduling service
+├── common/                        # Shared libraries and utilities
+├── init-scripts/                  # Database initialization scripts
+├── deployment/                    # Deployment scripts and configurations
+│   ├── docker/                    # Docker configurations
+│   └── kubernetes/                # K8s manifests
+└── docs/                          # Project documentation
 ```
 
 ## Building Services
@@ -110,7 +108,7 @@ cd patient-service
 1. **Start infrastructure services**
 
 ```bash
-docker-compose up -d mongodb postgres redis kafka
+docker-compose up -d postgres
 ```
 
 2. **Start the ESB**
@@ -125,15 +123,16 @@ cd esb
 In separate terminals:
 
 ```bash
-# Start Authentication Service
-cd auth-service
-../mvnw spring-boot:run -Dspring.profiles.active=local
+# Start the ESB (MuleSoft)
+docker-compose up -d esb
 
 # Start Patient Service
-cd patient-service
-../mvnw spring-boot:run -Dspring.profiles.active=local
+cd services/patient-service
+./mvnw spring-boot:run -Dspring.profiles.active=local
 
-# Repeat for other services
+# Start Appointment Service
+cd services/appointment-service
+./mvnw spring-boot:run -Dspring.profiles.active=local
 ```
 
 ## Service Implementation Steps
@@ -163,24 +162,25 @@ public interface PatientService {
 Create JPA entities and DTOs:
 
 ```java
-// patient-service/patient-domain/src/main/java/com/healthcare/patient/domain/PatientEntity.java
+// services/patient-service/src/main/java/com/healthcare/patient/model/Patient.java
 @Entity
 @Table(name = "patients")
-public class PatientEntity {
+public class Patient {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(columnDefinition = "serial")
+    private Integer id;
     
-    @Column(nullable = false)
+    @Column(nullable = false, name = "first_name")
     private String firstName;
     
-    @Column(nullable = false)
+    @Column(nullable = false, name = "last_name")
     private String lastName;
     
     @Column(nullable = false, unique = true)
     private String mrn;
     
-    @Column
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
     
     // Additional fields, getters, setters
@@ -192,11 +192,11 @@ public class PatientEntity {
 Create Spring Data repositories:
 
 ```java
-// patient-service/patient-data/src/main/java/com/healthcare/patient/data/PatientRepository.java
+// services/patient-service/src/main/java/com/healthcare/patient/repository/PatientRepository.java
 @Repository
-public interface PatientRepository extends JpaRepository<PatientEntity, String> {
-    List<PatientEntity> findByLastNameContainingIgnoreCase(String lastName);
-    Optional<PatientEntity> findByMrn(String mrn);
+public interface PatientRepository extends JpaRepository<Patient, Integer> {
+    List<Patient> findByLastNameContainingIgnoreCase(String lastName);
+    Optional<Patient> findByMrn(String mrn);
 }
 ```
 
@@ -231,13 +231,16 @@ public class PatientServiceImpl implements PatientService {
 Create RESTful endpoints:
 
 ```java
-// patient-service/patient-web/src/main/java/com/healthcare/patient/web/PatientController.java
+// services/patient-service/src/main/java/com/healthcare/patient/controller/PatientController.java
 @RestController
 @RequestMapping("/api/patients")
 public class PatientController {
     private final PatientService patientService;
     
-    // Constructor injection
+    @Autowired
+    public PatientController(PatientService patientService) {
+        this.patientService = patientService;
+    }
     
     @PostMapping
     public ResponseEntity<Patient> createPatient(@Valid @RequestBody Patient patient) {
@@ -245,6 +248,13 @@ public class PatientController {
         return ResponseEntity
             .created(URI.create("/api/patients/" + created.getId()))
             .body(created);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<Patient> getPatientById(@PathVariable Integer id) {
+        return patientService.getPatientById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
     
     // Other endpoints
@@ -256,22 +266,29 @@ public class PatientController {
 Implement event publishing with Kafka:
 
 ```java
-// patient-service/patient-messaging/src/main/java/com/healthcare/patient/messaging/PatientEventPublisher.java
+// services/appointment-service/src/main/java/com/healthcare/appointment/event/AppointmentEventPublisher.java
 @Component
-public class PatientEventPublisher {
-    private final KafkaTemplate<String, PatientEvent> kafkaTemplate;
+public class AppointmentEventPublisher {
+    private final RedisTemplate<String, Object> redisTemplate;
     
-    // Constructor injection
+    @Autowired
+    public AppointmentEventPublisher(RedisTemplate<String, Object> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
     
-    public void publishPatientCreated(Patient patient) {
-        PatientEvent event = new PatientEvent(
-            "PATIENT_CREATED",
-            patient.getId(),
+    public void publishAppointmentCreated(Appointment appointment) {
+        AppointmentEvent event = new AppointmentEvent(
+            "APPOINTMENT_CREATED",
+            appointment.getId(),
             LocalDateTime.now(),
-            patient
+            appointment
         );
         
-        kafkaTemplate.send("patient-events", patient.getId(), event);
+        // Publish to Redis for real-time updates
+        redisTemplate.convertAndSend("appointment-events", event);
+        
+        // Store event in MongoDB for historical purposes
+        // This will be handled by an event listener
     }
 }
 ```
@@ -335,9 +352,10 @@ terraform apply
 
 ## Next Steps
 
-1. Complete the base Patient Service implementation
-2. Set up the Authentication Service
-3. Implement the ESB configuration
-4. Add integration between services
-5. Implement FHIR compliance
-6. Set up CI/CD pipeline
+1. Enhance the enterprise database adaptation strategy
+2. Implement more comprehensive appointment features in Redis and MongoDB
+3. Extend MuleSoft ESB with additional healthcare integration flows
+4. Add FHIR compliance to both services
+5. Implement security with OAuth2
+6. Set up CI/CD pipeline with automated testing
+7. Add comprehensive monitoring and alerting

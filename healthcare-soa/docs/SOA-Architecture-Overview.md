@@ -8,15 +8,15 @@ The Healthcare Information Exchange System is a Service-Oriented Architecture (S
 
 ```ascii
 ┌─────────────────────────────────────────────────────────────────┐
-│                     API Gateway / Load Balancer                  │
+│                     API Gateway / Load Balancer                 │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
 ┌───────────────────────────────┼─────────────────────────────────┐
-│                               │                                  │
+│                               │                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │              Enterprise Service Bus (MuleSoft)           │    │
+│  │              Enterprise Service Bus (MuleSoft)          │    │
 │  └───────┬──────────┬───────────┬───────────┬──────────────┘    │
-│          │          │           │           │                    │
+│          │          │           │           │                   │
 │  ┌───────┴──┐  ┌────┴─────┐ ┌───┴───┐  ┌────┴────┐   ┌───────┐  │
 │  │ Patient  │  │ Provider │ │ Appt  │  │  Auth   │   │ Audit │  │
 │  │ Service  │  │ Service  │ │Service│  │ Service │   │Service│  │
@@ -26,7 +26,7 @@ The Healthcare Information Exchange System is a Service-Oriented Architecture (S
 │  │ Patient  │  │ Provider │ │ Appt  │  │  User   │   │ Audit │  │
 │  │   DB     │  │    DB    │ │  DB   │  │   DB    │   │  DB   │  │
 │  └──────────┘  └──────────┘ └───────┘  └─────────┘   └───────┘  │
-│                                                                  │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -93,11 +93,12 @@ The Healthcare Information Exchange System is a Service-Oriented Architecture (S
 ## Communication Patterns
 
 1. **Synchronous Communication**:
+
    - REST APIs for direct service-to-service communication
    - GraphQL for complex, aggregated data requests
    - SOAP for legacy system integration
-
 2. **Asynchronous Communication**:
+
    - Apache Kafka for event streaming
    - RabbitMQ for message queuing
    - WebSockets for real-time notifications

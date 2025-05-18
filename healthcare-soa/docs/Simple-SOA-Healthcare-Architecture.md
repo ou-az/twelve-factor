@@ -4,34 +4,32 @@ This document outlines a simplified Service-Oriented Architecture (SOA) for a he
 
 ## Architecture Overview
 
-```
+```ascii
 +----------------------+      +------------------------+      +----------------------+
 |                      |      |                        |      |                      |
-|   Patient Service    +------+      MuleSoft ESB      +------+  Appointment Service |
-|   (Spring Boot)     |      |  (Integration Hub)     |      |    (Spring Boot)     |
-|                      |      |                        |      |                      |
-+----------+-----------+      +------------------------+      +----------+-----------+
-           |                                                              |
-           |                                                              |
-           v                                                              v
-+----------+-----------+                                      +----------+-----------+
-|                      |                                      |                      |
-|     PostgreSQL       |                                      |        Redis         |
-|                      |                                      |                      |
-+----------------------+                                      +----------------------+
-                                   +------------------------+
-                                   |                        |
-                                   |        MongoDB         |
-                                   |                        |
-                                   +------------------------+
+|   Patient Service    |<---->|      MuleSoft ESB      |<---->|  Appointment Service |
+|   (Spring Boot)      |      | (healthcare-integration|      |    (Spring Boot)     |
+|   Schema Adaptation  |      |         -app)          |      |   Schema Adaptation  |
++----------+-----------+      +------------------------+      +---+------+----+------+
+           |      +-----------------------------------------------+      |    |
+           |      |                                         +------------+    |
+           |      |                                         |                 |
+           v      v                                         v                 v 
++----------+-----------+                               +----+----+      +-----+------+  
+|                      |                               |         |      |            |  
+|     PostgreSQL       |                               |  Redis  |      |  MongoDB   |  
+| (Enterprise Schema)  |                               |         |      |            |  
++----------------------+                               +---------+      +------------+  
+
 ```
 
-Our simplified healthcare SOA consists of:
+Our enterprise-ready healthcare SOA consists of:
 
-1. **MuleSoft ESB** - Central integration hub
-2. **Patient Service** - Spring Boot application for patient management
-3. **Appointment Service** - Spring Boot application for scheduling appointments
-4. **Supporting Infrastructure** - PostgreSQL, MongoDB, and Redis
+1. **MuleSoft ESB with healthcare-integration-app** - Central integration hub for service orchestration
+2. **Patient Service with Schema Adaptation** - Spring Boot application for patient management, adapted to work with existing enterprise database schemas
+3. **Appointment Service with Schema Adaptation** - Spring Boot application for scheduling appointments, with advanced schema compatibility features
+4. **Shared PostgreSQL Database** - Single PostgreSQL instance with enterprise schemas for both services
+5. **Supporting Infrastructure** - MongoDB for document storage and Redis for caching, directly connected to the Appointment Service
 
 ## Docker Services Setup
 
@@ -47,7 +45,7 @@ esb:
     - "8081:8081"  # HTTP
     - "8082:8082"  # HTTPS
   volumes:
-    - ./esb/apps/health-check-app:/opt/mule/apps/health-check-app
+    - ./esb/apps/healthcare-integration-app:/opt/mule/apps/healthcare-integration-app
     - ./esb/domains/default:/opt/mule/domains/default
   environment:
     - MULE_ENV=local
@@ -55,7 +53,6 @@ esb:
     - healthcare-network
   restart: unless-stopped
 ```
-
 ### 2. Spring Boot Microservices
 
 #### Patient Service
@@ -80,7 +77,6 @@ patient-service:
   networks:
     - healthcare-network
 ```
-
 #### Appointment Service
 
 ```yaml
@@ -108,7 +104,6 @@ appointment-service:
   networks:
     - healthcare-network
 ```
-
 ### 3. Supporting Infrastructure
 
 ```yaml
@@ -153,7 +148,6 @@ networks:
   healthcare-network:
     driver: bridge
 ```
-
 ## Spring Boot Service Implementation
 
 ### Patient Service
@@ -166,7 +160,8 @@ The Patient Service manages patient information and provides APIs for patient re
 - Patient search functionality
 - Insurance information management
 
-#### Dependencies:
+#### Dependencies
+
 ```xml
 <dependencies>
     <dependency>
@@ -191,8 +186,8 @@ The Patient Service manages patient information and provides APIs for patient re
     </dependency>
 </dependencies>
 ```
+#### Sample Controller
 
-#### Sample Controller:
 ```java
 @RestController
 @RequestMapping("/api/patients")
@@ -230,7 +225,6 @@ public class PatientController {
     }
 }
 ```
-
 ### Appointment Service
 
 The Appointment Service handles scheduling, managing, and tracking patient appointments.
@@ -241,7 +235,8 @@ The Appointment Service handles scheduling, managing, and tracking patient appoi
 - Notifications for appointments
 - Check-in/check-out tracking
 
-#### Dependencies:
+#### Dependencies
+
 ```xml
 <dependencies>
     <dependency>
@@ -270,8 +265,8 @@ The Appointment Service handles scheduling, managing, and tracking patient appoi
     </dependency>
 </dependencies>
 ```
+#### Sample Controller
 
-#### Sample Controller:
 ```java
 @RestController
 @RequestMapping("/api/appointments")
@@ -314,7 +309,6 @@ public class AppointmentController {
     }
 }
 ```
-
 ## MuleSoft ESB Integration
 
 MuleSoft ESB acts as the central integration hub, providing:
@@ -421,7 +415,6 @@ MuleSoft ESB acts as the central integration hub, providing:
     </flow>
 </mule>
 ```
-
 ## Deployment Steps
 
 1. **Clone the project repository**
@@ -429,7 +422,6 @@ MuleSoft ESB acts as the central integration hub, providing:
    git clone https://github.com/healthcare-org/healthcare-soa.git
    cd healthcare-soa
    ```
-
 2. **Build the Spring Boot microservices**
    ```bash
    cd services/patient-service
@@ -438,12 +430,10 @@ MuleSoft ESB acts as the central integration hub, providing:
    ./mvnw clean package
    cd ../..
    ```
-
 3. **Start the Docker containers**
    ```bash
    docker-compose up -d
    ```
-
 4. **Verify the deployment**
    ```bash
    # Check running containers
@@ -458,6 +448,29 @@ MuleSoft ESB acts as the central integration hub, providing:
    # Test Appointment Service (via MuleSoft ESB)
    curl http://localhost:8081/api/v1/appointments
    ```
+## Enterprise Database Strategy
+
+This architecture implements an enterprise-grade database schema adaptation strategy that accommodates common scenarios in large organizations where database changes require formal approval processes.
+
+### Key Components of the Strategy
+
+1. **Schema Compatibility**
+   - Entity models adapted to work with existing database schemas (e.g., using Integer with @Column(columnDefinition = "serial") for ID fields)
+   - Consistent type handling across repositories, services, and controllers
+   - Hibernate configured with `ddl-auto: none` to prevent schema modification attempts
+
+2. **Advanced Schema Adaptation (for appointment-service)**
+   - @Transient annotations for missing columns that require schema changes
+   - Custom repository implementation for schema-dependent queries
+   - Feature flag system for controlled feature enablement
+   - Data encoding in existing columns when dedicated columns aren't available
+
+### Benefits
+
+- Allows applications to work with legacy database schemas
+- Provides graceful degradation when database permissions are restricted
+- Enables deployment of new features before schema changes are approved
+- Maintains production stability while database changes are pending
 
 ## Conclusion
 
@@ -469,5 +482,6 @@ By implementing this architecture, healthcare organizations can achieve:
 2. **Interoperability** - MuleSoft ESB facilitates seamless communication
 3. **Scalability** - Docker containers allow for flexible scaling
 4. **Maintainability** - Clear separation of concerns simplifies maintenance
+5. **Enterprise Compatibility** - Database adaptation strategies for working with legacy systems
 
 This architecture can be extended by adding more specialized microservices as needed for a complete healthcare information system.

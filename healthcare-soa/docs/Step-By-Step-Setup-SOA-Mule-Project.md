@@ -22,8 +22,9 @@ Ensure the following tools are installed on your system:
 - Docker Desktop (version 20.10.0+)
 - Docker Compose (version 1.29.0+)
 - Git (version 2.30.0+)
-- Java Development Kit (JDK) 11
-- Anypoint Studio 7.4+ (for local development)
+- Java Development Kit (JDK) 8
+- Anypoint Studio 6.6+ (for Mule 3.8.0 development)
+- Maven 3.6.0+
 - cURL or Postman (for API testing)
 
 ## Project Setup
@@ -44,10 +45,14 @@ healthcare-soa/
 ├── esb/
 │   ├── Dockerfile                       # Custom Mule Runtime Dockerfile
 │   ├── apps/                            # Mule applications deployed to the runtime
-│   │   └── healthcare-system-api/       # Main ESB API
+│   │   └── healthcare-integration-app/  # Main ESB API
 │   ├── domains/                         # Shared domain configurations
+│   │   └── default/                     # Default domain configuration
 │   ├── conf/                            # Runtime configurations
 │   └── logs/                            # Log files
+├── services/                            # Microservices
+│   ├── patient-service/                 # Patient management microservice
+│   └── appointment-service/             # Appointment management microservice
 ├── init-scripts/                        # Database initialization scripts
 ├── docker-compose.yml                   # Docker Compose configuration
 └── docs/                                # Project documentation
@@ -63,7 +68,7 @@ Create a Dockerfile for the MuleSoft ESB in `esb/Dockerfile`:
 FROM openjdk:11-jdk-slim
 
 # Set environment variables
-ENV MULE_VERSION=4.4.0
+ENV MULE_VERSION=3.8.0
 ENV MULE_HOME=/opt/mule
 ENV MULE_USER=mule
 ENV MULE_USER_UID=1000
@@ -125,20 +130,15 @@ version: '3.8'
 
 services:
   esb:
-    build:
-      context: ./esb
-      dockerfile: Dockerfile
+    image: vromero/mule:3.8.0
     container_name: healthcare-esb
     ports:
       - "8081:8081"  # HTTP
       - "8082:8082"  # HTTPS
       - "5000:5000"  # JMX
-      - "9000:9000"  # Debugging
     volumes:
-      - ./esb/apps:/opt/mule/apps
-      - ./esb/domains:/opt/mule/domains
-      - ./esb/logs:/opt/mule/logs
-      - ./esb/conf:/opt/mule/conf
+      - ./esb/apps/healthcare-integration-app:/opt/mule/apps/healthcare-integration-app
+      - ./esb/domains/default:/opt/mule/domains/default
     environment:
       - MULE_ENV=local
       - JAVA_OPTS=-Xmx2g -XX:MaxMetaspaceSize=512m
@@ -158,7 +158,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres123456
-      - POSTGRES_MULTIPLE_DATABASES=patient_db,provider_db,appointment_db,auth_db,audit_db
+      - POSTGRES_DB=healthcaredb
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -269,89 +269,90 @@ chmod +x init-scripts/init-postgres.sh
 
 ### 1. Create a Basic MuleSoft Application
 
-Create a health check application in `esb/apps/healthcare-system-api/` with the following files:
+Create an integration application in `esb/apps/healthcare-integration-app/` with the following files:
 
-**mule-artifact.json**:
-```json
-{
-  "minMuleVersion": "4.4.0",
-  "classLoaderModelLoaderDescriptor": {
-    "id": "mule",
-    "attributes": {
-      "exportedPackages": [],
-      "exportedResources": []
-    }
-  },
-  "bundleDescriptorLoader": {
-    "id": "mule",
-    "attributes": {}
-  },
-  "configs": [
-    "healthcare-system-api.xml"
-  ]
-}
+**mule-deploy.properties**:
+```properties
+# Mule deployment descriptor
+redeployment.enabled=true
+encoding=UTF-8
+config.resources=healthcare-integration-app.xml
+domain=default
 ```
 
-**healthcare-system-api.xml**:
+**healthcare-integration-app.xml**:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <mule xmlns="http://www.mulesoft.org/schema/mule/core"
       xmlns:http="http://www.mulesoft.org/schema/mule/http"
-      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
       xsi:schemaLocation="
         http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
-        http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
 
-  <!-- Configuration for HTTP listener -->
-  <http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config">
-    <http:listener-connection host="0.0.0.0" port="8081" />
-  </http:listener-config>
+    <http:listener-config name="HTTP_Listener_config" host="0.0.0.0" port="8081" />
+    <http:request-config name="Patient_Service_Request_config" host="patient-service" port="8091" />
+    <http:request-config name="Appointment_Service_Request_config" host="appointment-service" port="8092" />
 
-  <!-- Health Check Endpoint -->
-  <flow name="health-check-flow">
-    <http:listener config-ref="HTTP_Listener_config" path="/api/health" doc:name="Health Check Endpoint"/>
-    <ee:transform doc:name="Transform Message">
-      <ee:message>
-        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  status: "UP",
-  timestamp: now(),
-  components: {
-    esb: {
-      status: "UP"
-    }
-  }
-}]]></ee:set-payload>
-      </ee:message>
-    </ee:transform>
-  </flow>
+    <!-- Health check endpoint -->
+    <flow name="health-check-flow">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/health" />
+        <set-payload value='{"status":"UP","timestamp":"now","components":{"esb":{"status":"UP"}}}' mimeType="application/json" />
+    </flow>
+    
+    <!-- Patient service gateway -->
+    <flow name="patient-api-flow">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/v1/patients/*" />
+        <http:request config-ref="Patient_Service_Request_config" path="/api/patients/{path}" method="#[attributes.method]">
+            <http:uri-params>
+                <![CDATA[#[output application/java
+                ---
+                {
+                    "path": attributes.uriParams.path
+                }]]]>
+            </http:uri-params>
+        </http:request>
+    </flow>
+    
+    <!-- Appointment service gateway -->
+    <flow name="appointment-api-flow">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/v1/appointments/*" />
+        <http:request config-ref="Appointment_Service_Request_config" path="/api/appointments/{path}" method="#[attributes.method]">
+            <http:uri-params>
+                <![CDATA[#[output application/java
+                ---
+                {
+                    "path": attributes.uriParams.path
+                }]]]>
+            </http:uri-params>
+        </http:request>
+    </flow>
 </mule>
 ```
 
 ### 2. Configuration Files
 
-Create the configuration file for local environment in `esb/apps/healthcare-system-api/healthcare-config-local.yaml`:
+Create the configuration file for local environment in `esb/apps/healthcare-integration-app/healthcare-config-local.yaml`:
 
 ```yaml
 # Healthcare SOA Configuration - Local Environment
 
 # Service Hostnames and Ports
-patient.service.host: "localhost"
-patient.service.port: "8091"
-provider.service.host: "localhost"
-provider.service.port: "8092"
-appointment.service.host: "localhost"
-appointment.service.port: "8093"
+patient.service.host: "patient-service"
+patient.service.port: 8091
+appointment.service.host: "appointment-service"
+appointment.service.port: 8092
 
-# Database Configurations
-patient.db.url: "jdbc:postgresql://postgres:5432/patient_db"
-patient.db.username: "postgres"
-patient.db.password: "postgres123456"
+# Database Configuration
+postgres.db.url: "jdbc:postgresql://postgres:5432/healthcaredb"
+postgres.db.username: "postgres"
+postgres.db.password: "postgres123456"
+mongo.db.url: "mongodb://mongouser:mongopassword@mongodb:27017/appointmentdb"
+redis.url: "redis://redispassword@redis:6379"
+
+# Enterprise Database Adaptation Strategy
+db.use.legacy.schema: true
+db.feature.flags.enabled: true
 
 # Other configurations as needed
 ```
@@ -419,7 +420,7 @@ View the logs from the MuleSoft container:
 docker-compose logs -f esb
 ```
 
-Look for the startup confirmation message: "Started app 'healthcare-system-api'".
+Look for the startup confirmation message: "Started app 'healthcare-integration-app'".
 
 ### 4. Access the Health Check Endpoint
 
@@ -528,7 +529,7 @@ If the MuleSoft application fails to deploy:
 
 1. Check the application structure:
    ```bash
-   ls -la esb/apps/healthcare-system-api/
+   ls -la esb/apps/healthcare-integration-app/
    ```
 
 2. Verify the application artifact:
@@ -538,7 +539,7 @@ If the MuleSoft application fails to deploy:
 
 3. Check deployment logs:
    ```bash
-   docker-compose exec esb cat /opt/mule/logs/mule-app-healthcare-system-api.log
+   docker-compose exec esb cat /opt/mule/logs/mule-app-healthcare-integration-app.log
    ```
 
 #### Runtime Errors
@@ -552,14 +553,15 @@ For errors during execution:
 
 2. Enable debug logging by updating `log4j2.xml` to set root level to "DEBUG".
 
-### 3. Common MuleSoft Errors
+#### 3. Common MuleSoft Errors
 
 | Error Message | Possible Cause | Solution |
-|---------------|----------------|----------|
-| `Failed to deploy artifact` | Invalid application structure | Verify mule-artifact.json and XML files |
-| `Could not find a transformer` | DataWeave transformation issues | Check DW script syntax |
+|---------------|----------------|---------|
+| `Failed to deploy artifact` | Invalid application structure | Verify mule-deploy.properties and XML files |
+| `Could not find a transformer` | MEL transformation issues | Check expression syntax |
 | `Connection timeout` | Service not available | Verify service host and port |
 | `OutOfMemoryError` | Insufficient memory allocation | Increase JVM memory settings |
+| `Legacy database schema error` | Incompatibility with enterprise schema | Apply enterprise database adaptation strategy |
 
 ## Monitoring
 
@@ -647,12 +649,13 @@ For each environment (dev, test, staging, production):
 
 ### 1. MuleSoft Docker Best Practices
 
-- **Image Size**: Use multi-stage builds to minimize image size
+- **Image Selection**: Use community-supported images like `vromero/mule:3.8.0`
 - **Security**: Remove unnecessary tools from production images
 - **Configuration**: Use environment variables for all configurations
 - **Logging**: Implement structured logging
 - **Health Checks**: Include comprehensive health checks
 - **Resource Limits**: Set appropriate CPU and memory limits
+- **Volume Management**: Only mount necessary directories
 
 ### 2. MuleSoft Application Best Practices
 
@@ -661,8 +664,9 @@ For each environment (dev, test, staging, production):
 - **Caching**: Use caching for frequently accessed data
 - **Transactions**: Handle transactions appropriately
 - **API Contracts**: Define clear API contracts
-- **Documentation**: Document all APIs using RAML or OAS
+- **Documentation**: Document all APIs using RAML
 - **Testing**: Implement automated testing
+- **Domain Sharing**: Utilize domains for shared resources
 
 ### 3. Security Best Practices
 
@@ -673,8 +677,18 @@ For each environment (dev, test, staging, production):
 - **Least Privilege**: Run containers with minimal permissions
 - **Regular Updates**: Keep all components updated
 
+### 4. Enterprise Database Adaptation Best Practices
+
+- **Schema Compatibility**: Use `@Column(columnDefinition="serial")` for ID fields
+- **Type Consistency**: Align Java types with database column types
+- **Transient Properties**: Use `@Transient` for missing columns with custom getters/setters
+- **Repository Patterns**: Implement custom repository interfaces for flexibility
+- **Feature Flags**: Use flags to control feature availability
+- **Hibernate Configuration**: Set `ddl-auto: none` instead of `validate`
+- **Naming Strategies**: Configure proper naming strategies for working with legacy schemas
+
 ## Conclusion
 
 This SOP provides a comprehensive guide for setting up, running, testing, troubleshooting, and monitoring a MuleSoft ESB environment within Docker for the Healthcare Information Exchange SOA system.
 
-By following these instructions, you can establish a robust integration platform that follows SOA principles and twelve-factor application methodology, enabling effective healthcare information exchange across disparate systems.
+By following these instructions, you can establish a robust integration platform that follows SOA principles and twelve-factor application methodology, enabling effective healthcare information exchange across disparate systems while successfully adapting to enterprise database schemas.
