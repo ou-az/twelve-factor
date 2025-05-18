@@ -34,7 +34,7 @@ Build all the required Docker images for your microservices architecture:
 
 ```bash
 # Navigate to the product-service directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\product-service
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\product-service
 
 # Run Maven build
 ./mvnw clean package -DskipTests
@@ -65,7 +65,7 @@ The ECR repositories for all services are defined in our Terraform configuration
 
 ```bash
 # Navigate to the Terraform production environment directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 # Initialize Terraform
 terraform init
@@ -618,7 +618,7 @@ To avoid incurring unnecessary AWS costs, clean up resources when they're not ne
 
 ```bash
 # Navigate to Terraform directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 # Destroy all resources created by Terraform
 terraform destroy

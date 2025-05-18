@@ -40,7 +40,7 @@ Create a new file in your prod environment directory:
 
 ```bash
 # Navigate to the prod environment directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 # Create backend.tf file
 ```
@@ -188,7 +188,7 @@ else
   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin $ECR_REGISTRY
 
   # Build and push the Spring Boot application image
-  cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\product-service
+  cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\product-service
   .\mvnw clean package -DskipTests
   docker build -t ecommerce-product-service:latest .
   docker tag ecommerce-product-service:latest "$PRODUCT_ECR`:latest"
@@ -218,7 +218,7 @@ fi
 
 ```bash
 # Return to terraform directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 # Create the EKS cluster
 terraform apply -target=module.eks
@@ -253,10 +253,10 @@ Create deployment files for your applications using the ECR image URLs:
 
 ```bash
 # Navigate to a directory for your K8s manifests
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\kubernetes
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\kubernetes
 
 # Retrieve ECR URLs again if needed
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 PRODUCT_ECR=$(terraform output -raw product_service_ecr_repository_url)
 KAFKA_ECR=$(terraform output -raw kafka_ecr_repository_url)
 ZOOKEEPER_ECR=$(terraform output -raw zookeeper_ecr_repository_url)
@@ -264,7 +264,7 @@ KAFKA_UI_ECR=$(terraform output -raw kafka_ui_ecr_repository_url)
 POSTGRES_ECR=$(terraform output -raw postgres_ecr_repository_url)
 
 # Go back to Kubernetes directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\kubernetes
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\kubernetes
 ```
 
 ### Step 2: Update Kubernetes Manifests with ECR Image URLs
@@ -302,7 +302,7 @@ Create a script to automatically update all Kubernetes deployment files with the
 # PowerShell script to update Kubernetes deployment files with ECR repository URLs
 
 # Change to the Terraform directory to get outputs
-Set-Location C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+Set-Location <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 # Get ECR repository URLs
 $PRODUCT_ECR = terraform output -raw product_service_ecr_repository_url
@@ -319,7 +319,7 @@ Write-Host "Kafka UI: $KAFKA_UI_ECR"
 Write-Host "PostgreSQL: $POSTGRES_ECR"
 
 # Change to the Kubernetes directory
-Set-Location C:\workspaces\interview\twelve-factor\ecommerce-microservices\kubernetes
+Set-Location <SOURCE_DIR>\twelve-factor\ecommerce-microservices\kubernetes
 
 # Update the deployment files with the correct image URLs
 $files = @{
@@ -408,7 +408,7 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 # PowerShell script to install AWS Load Balancer Controller using YAML directly
 
 # Get cluster name from Terraform output
-Set-Location C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+Set-Location <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 $CLUSTER_NAME = terraform output -raw eks_cluster_name
 
 # Download and modify the controller YAML

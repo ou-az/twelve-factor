@@ -14,7 +14,7 @@ kubectl get serviceaccount -n kube-system aws-load-balancer-controller -o yaml
 Write-Host "`nLet's create the proper IAM roles for the controller..." -ForegroundColor Cyan
 
 # First, get the cluster name
-Set-Location C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+Set-Location <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 $CLUSTER_NAME = terraform output -raw eks_cluster_name
 $AWS_REGION = terraform output -raw aws_region
 

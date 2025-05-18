@@ -1,7 +1,7 @@
 # PowerShell script to update Kubernetes deployment files with ECR repository URLs
 
 # Change to the Terraform directory to get outputs
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 # Get ECR repository URLs
 $PRODUCT_ECR = terraform output -raw product_service_ecr_repository_url
@@ -18,7 +18,7 @@ Write-Host "Kafka UI: $KAFKA_UI_ECR"
 Write-Host "PostgreSQL: $POSTGRES_ECR"
 
 # Change to the Kubernetes directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\kubernetes
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\kubernetes
 
 # Update the deployment files with the correct image URLs
 $files = @{

@@ -1,7 +1,7 @@
 # PowerShell script to install AWS Load Balancer Controller on EKS
 
 # Get cluster name from Terraform output
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 $CLUSTER_NAME = terraform output -raw eks_cluster_name
 $AWS_REGION = terraform output -raw aws_region
 $VPC_ID = terraform output -raw vpc_id

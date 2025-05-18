@@ -70,14 +70,14 @@ Create a new file for backend configuration:
 </span><span class="token">'</span><span>@
 </span>
 <span></span><span class="token"># Write the backend configuration to a file</span><span>
-</span><span></span><span class="token">$backendConfig</span><span></span><span class="token">|</span><span></span><span class="token">Out-File</span><span> C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod\backend</span><span class="token">.</span><span>tf </span><span class="token">-</span><span>Encoding utf8</span></code></div></div></div></div></pre>
+</span><span></span><span class="token">$backendConfig</span><span></span><span class="token">|</span><span></span><span class="token">Out-File</span><span> <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod\backend</span><span class="token">.</span><span>tf </span><span class="token">-</span><span>Encoding utf8</span></code></div></div></div></div></pre>
 
 ## Phase 2: Building and Pushing Docker Images
 
 ### 1. Build The Spring Boot Application Image
 
 <pre><div><div class="relative box-border flex flex-row items-center justify-between rounded-t border border-gray-500/50 px-2 py-0.5"><div class="absolute inset-0 bg-gray-500 opacity-20"></div><div class="font-sans text-sm text-ide-text-color">powershell</div><div><button data-tooltip="Copied!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Copy</button><button data-tooltip="Inserted!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Insert</button></div></div><div class="language-powershell relative overflow-hidden border-x border-b border-gray-500/50" aria-label="highlighted-code-language-powershell"><div class="w-full overflow-x-auto"><div><code><span class="token"># Navigate to product-service directory</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\product-service
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\product-service
 
 <span></span><span class="token"># Build the Spring Boot application</span><span>
 </span><span></span><span class="token">.</span><span class="token">/</span><span>mvnw clean package </span><span class="token">-</span><span>DskipTests
@@ -116,12 +116,12 @@ First, let's create a secure way to manage sensitive information like database p
 </span><span class="token">'</span><span>@
 </span>
 <span></span><span class="token"># Write to a secure location</span><span>
-</span><span></span><span class="token">$varsContent</span><span></span><span class="token">|</span><span></span><span class="token">Out-File</span><span> C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod\terraform</span><span class="token">.</span><span>tfvars </span><span class="token">-</span><span>Encoding utf8</span></code></div></div></div></div></pre>
+</span><span></span><span class="token">$varsContent</span><span></span><span class="token">|</span><span></span><span class="token">Out-File</span><span> <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod\terraform</span><span class="token">.</span><span>tfvars </span><span class="token">-</span><span>Encoding utf8</span></code></div></div></div></div></pre>
 
 ### 2. Terraform Initialization and Validation
 
 <pre><div><div class="relative box-border flex flex-row items-center justify-between rounded-t border border-gray-500/50 px-2 py-0.5"><div class="absolute inset-0 bg-gray-500 opacity-20"></div><div class="font-sans text-sm text-ide-text-color">powershell</div><div><button data-tooltip="Copied!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Copy</button><button data-tooltip="Inserted!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Insert</button></div></div><div class="language-powershell relative overflow-hidden border-x border-b border-gray-500/50" aria-label="highlighted-code-language-powershell"><div class="w-full overflow-x-auto"><div><code><span class="token"># Navigate to the prod environment directory</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 <span></span><span class="token"># Initialize Terraform with backend configuration</span><span>
 </span>terraform init
@@ -591,7 +591,7 @@ For a complete enterprise solution, integrate with a CI/CD pipeline:
 When you need to update infrastructure:
 
 <pre><div><div class="relative box-border flex flex-row items-center justify-between rounded-t border border-gray-500/50 px-2 py-0.5"><div class="absolute inset-0 bg-gray-500 opacity-20"></div><div class="font-sans text-sm text-ide-text-color">powershell</div><div><button data-tooltip="Copied!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Copy</button><button data-tooltip="Inserted!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Insert</button></div></div><div class="language-powershell relative overflow-hidden border-x border-b border-gray-500/50" aria-label="highlighted-code-language-powershell"><div class="w-full overflow-x-auto"><div><code><span class="token"># Always pull latest changes and run a plan first</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 <span>terraform plan </span><span class="token">-</span><span>out=update</span><span class="token">.</span><span>plan
 </span>
 <span></span><span class="token"># Review changes carefully before applying</span><span>
@@ -648,7 +648,7 @@ I'll walk you through a production-grade deployment of your containerized ecomme
 Create a new file in your prod environment directory:
 
 <pre><div><div class="relative box-border flex flex-row items-center justify-between rounded-t border border-gray-500/50 px-2 py-0.5"><div class="absolute inset-0 bg-gray-500 opacity-20"></div><div class="font-sans text-sm text-ide-text-color">powershell</div><div><button data-tooltip="Copied!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Copy</button><button data-tooltip="Inserted!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Insert</button></div></div><div class="language-powershell relative overflow-hidden border-x border-b border-gray-500/50" aria-label="highlighted-code-language-powershell"><div class="w-full overflow-x-auto"><div><code><span class="token"># Navigate to the prod environment directory</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 <span></span><span class="token"># Create backend.tf file</span></code></div></div></div></div></pre>
 
@@ -745,7 +745,7 @@ Add the following to your `environments/prod/main.tf`:
 </span><span>aws ecr </span><span class="token">get-login</span><span class="token">-</span><span>password </span><span class="token">|</span><span> docker login </span><span class="token">--</span><span>username AWS </span><span class="token">--</span><span>password-stdin </span><span class="token">$ECR_REGISTRY</span><span>
 </span>
 <span></span><span class="token"># Build and push the Spring Boot application image</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\product-service
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\product-service
 <span></span><span class="token">.</span><span class="token">/</span><span>mvnw clean package </span><span class="token">-</span><span>DskipTests
 </span><span>docker build </span><span class="token">-</span><span>t ecommerce-product-service:latest </span><span class="token">.</span><span>
 </span><span>docker tag ecommerce-product-service:latest </span><span class="token">$PRODUCT_ECR</span><span>:latest
@@ -767,7 +767,7 @@ Add the following to your `environments/prod/main.tf`:
 ### Step 4: Deploy EKS Cluster
 
 <pre><div><div class="relative box-border flex flex-row items-center justify-between rounded-t border border-gray-500/50 px-2 py-0.5"><div class="absolute inset-0 bg-gray-500 opacity-20"></div><div class="font-sans text-sm text-ide-text-color">powershell</div><div><button data-tooltip="Copied!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Copy</button><button data-tooltip="Inserted!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Insert</button></div></div><div class="language-powershell relative overflow-hidden border-x border-b border-gray-500/50" aria-label="highlighted-code-language-powershell"><div class="w-full overflow-x-auto"><div><code><span class="token"># Return to terraform directory</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 
 <span></span><span class="token"># Create the EKS cluster</span><span>
 </span><span>terraform apply </span><span class="token">-</span><span>target=module</span><span class="token">.</span><span>eks</span></code></div></div></div></div></pre>
@@ -796,17 +796,17 @@ Add the following to your `environments/prod/main.tf`:
 Create deployment files for your applications using the ECR image URLs:
 
 <pre><div><div class="relative box-border flex flex-row items-center justify-between rounded-t border border-gray-500/50 px-2 py-0.5"><div class="absolute inset-0 bg-gray-500 opacity-20"></div><div class="font-sans text-sm text-ide-text-color">powershell</div><div><button data-tooltip="Copied!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Copy</button><button data-tooltip="Inserted!" class="relative rounded px-2 py-1 text-xs whitespace-nowrap text-ide-text-color font-sans hover:bg-gray-500/10 cursor-pointer disabled:cursor-not-allowed after:absolute after:-bottom-1 after:left-2/4 after:-translate-x-1/2 after:translate-y-full after:rounded after:bg-black after:px-1 after:py-0.5 after:text-xs after:text-white after:opacity-0 transition-opacity after:duration-200 after:content-[attr(data-tooltip)]">Insert</button></div></div><div class="language-powershell relative overflow-hidden border-x border-b border-gray-500/50" aria-label="highlighted-code-language-powershell"><div class="w-full overflow-x-auto"><div><code><span class="token"># Navigate to a directory for your K8s manifests</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\kubernetes
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\kubernetes
 
 <span></span><span class="token"># Retrieve ECR URLs again if needed</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 <span></span><span class="token">$PRODUCT_ECR</span><span> = terraform output </span><span class="token">-</span><span>raw product_service_ecr_repository_url
 </span><span></span><span class="token">$KAFKA_ECR</span><span> = terraform output </span><span class="token">-</span><span>raw kafka_ecr_repository_url
 </span><span></span><span class="token">$ZOOKEEPER_ECR</span><span> = terraform output </span><span class="token">-</span><span>raw zookeeper_ecr_repository_url
 </span><span></span><span class="token">$KAFKA_UI_ECR</span><span> = terraform output </span><span class="token">-</span><span>raw kafka_ui_ecr_repository_url
 </span>
 <span></span><span class="token"># Go back to Kubernetes directory</span><span>
-</span>cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\kubernetes</code></div></div></div></div></pre>
+</span>cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\kubernetes</code></div></div></div></div></pre>
 
 ### Step 2: Update Kubernetes Manifests with ECR Image URLs
 

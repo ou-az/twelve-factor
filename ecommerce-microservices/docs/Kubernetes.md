@@ -74,7 +74,7 @@ The simplest approach for development, using an in-memory database:
 
 ```bash
 # Navigate to the product service directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\product-service
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\product-service
 
 # Build the application
 mvn clean package -DskipTests
@@ -89,7 +89,7 @@ The balanced approach that provides the full stack with minimal setup:
 
 ```bash
 # Navigate to the root directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices
 
 # Start all services
 docker-compose up
@@ -133,7 +133,7 @@ For testing the full Kubernetes deployment locally, the simplest approach is to 
 
 ```powershell
 # Navigate to Kubernetes configuration directory
-cd C:\workspaces\interview\twelve-factor\ecommerce-microservices\kubernetes
+cd <SOURCE_DIR>\twelve-factor\ecommerce-microservices\kubernetes
 
 # Apply all Kubernetes manifests
 kubectl apply -k .

@@ -2,7 +2,7 @@
 # Without requiring eksctl
 
 # Get cluster info
-Set-Location C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+Set-Location <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 $CLUSTER_NAME = terraform output -raw eks_cluster_name
 $AWS_REGION = terraform output -raw aws_region
 $ACCOUNT_ID = aws sts get-caller-identity --query "Account" --output text

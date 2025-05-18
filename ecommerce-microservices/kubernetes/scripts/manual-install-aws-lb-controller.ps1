@@ -1,7 +1,7 @@
 # PowerShell script to install AWS Load Balancer Controller using YAML directly (no Helm required)
 
 # Get cluster name from Terraform output
-Set-Location C:\workspaces\interview\twelve-factor\ecommerce-microservices\terraform\environments\prod
+Set-Location <SOURCE_DIR>\twelve-factor\ecommerce-microservices\terraform\environments\prod
 $CLUSTER_NAME = terraform output -raw eks_cluster_name
 $AWS_REGION = terraform output -raw aws_region
 $VPC_ID = terraform output -raw vpc_id
